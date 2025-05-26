@@ -4,7 +4,7 @@ metadata:
   name: mongo-client-api
   namespace: mongodb
 spec:
-  replicas: 1
+  replicas: 20
   selector:
     matchLabels:
       app: mongo-client-api
