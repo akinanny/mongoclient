@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mongo-client-api
-  namespace: mongo-system
+  namespace: mongodb
 spec:
   replicas: 1
   selector:
