@@ -1,0 +1,51 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up image tag
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      
+      - name: Confirm Docker is Available
+        run: |
+          echo "PATH: $PATH"
+          which /usr/bin/docker || echo "docker not found"
+          /usr/bin/docker version || echo "docker not usable"          
+
+
+
+      - name: Build Docker image
+        run: |
+          /usr/bin/docker build -t 95.177.173.127:31158/akinanny/mongo-client:${{ env.IMAGE_TAG }} .          
+
+      - name: Login to Gitea registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login 95.177.173.127:31158 -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Push Docker image
+        run: /usr/bin/docker push 95.177.173.127:31158/akinanny/mongo-client:${{ env.IMAGE_TAG }}
+
+      - name: Update manifest
+        run: |
+          sed -i "s|image: .*|image: 95.177.173.127:31158/akinanny/mongo-client:${{ env.IMAGE_TAG }}|" ./deploy.yaml          
+
+      - name: Commit updated manifest
+        run: |
+          git config user.name "akinanny"
+          git config user.email "akinanny@gmail.com"
+          git add deploy.yaml
+          git commit -m "Update image tag to ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
+          git push origin main
+
+          #- name: Deploy to Kubernetes
+          #run: kubectl apply -f ./manifests/minio-client/deploy2.yaml          
+
+
